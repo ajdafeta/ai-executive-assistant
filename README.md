@@ -131,6 +131,8 @@ The application follows a modular architecture:
 
 Apache 2.0 - see LICENSE file for details
 
-## 👩🏾‍💻 Support
+## 🔮 Roadmap
 
-For issues and questions, please open a GitHub issue or contact the development team.
+- [ ] Evaluation and Monitoring
+- [ ] Multi-language support
+- [ ] Microsoft integration support
