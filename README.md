@@ -133,6 +133,6 @@ Apache 2.0 - see LICENSE file for details
 
 ## 🔮 Roadmap
 
-- [ ] Evaluation and Monitoring
+- [ ] Model evaluation and monitoring
 - [ ] Multi-language support
 - [ ] Microsoft integration support
