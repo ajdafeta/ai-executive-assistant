@@ -108,7 +108,7 @@ SESSION_SECRET=your_session_secret
 
 ## License
 
-MIT License - see LICENSE file for details
+Apache 2.0 - see LICENSE file for details
 
 ## Support
 
