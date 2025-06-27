@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliAssist - AI-Powered Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover .logo-icon {
+            transform: scale(1.05);
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .connection-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-outline-danger {
+            background: transparent;
+            color: #dc2626;
+            border: 1px solid #dc2626;
+        }
+
+        .btn-outline-danger:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-badge.connected {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.disconnected {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .status-dot.disconnected {
+            background: var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Stats Overview */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Chat Section */
+        .chat-section {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-message.message-user {
+            align-items: flex-end;
+        }
+
+        .chat-message.message-assistant {
+            align-items: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            text-align: left;
+            margin: 0;
+        }
+
+        .message-user .message-content {
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .message-assistant .message-content {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            background: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .close-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .send-button {
+            padding: 12px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Quick Actions */
+        .quick-actions h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .action-button {
+            padding: 6px 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .action-button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Section separator */
+        .section-separator {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+            opacity: 0.6;
+        }
+
+        /* Priority sections styling */
+        .priority-tasks {
+            border-left: 4px solid #8b5cf6;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+        }
+
+        .priority-emails {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .priority-icon {
+            color: #8b5cf6;
+            animation: pulse-purple 2s infinite;
+        }
+
+
+
+        @keyframes pulse-purple {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+
+
+        /* Task priority indicators */
+        .task-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .task-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-high {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .task-medium {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .task-low {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-due {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .priority-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: #ef4444;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .priority-low {
+            background: #10b981;
+            color: white;
+        }
+
+        /* Task priority styling */
+        .task-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8fafc;
+        }
+
+        .task-item.priority-high {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .task-item.priority-medium {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .task-item.priority-low {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1f2937;
+        }
+
+        .task-title i {
+            margin-right: 8px;
+            color: #6b7280;
+            width: 14px;
+        }
+
+        .task-due {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+
+        .task-priority {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+
+        /* Email styling - matching task styling */
+        .email-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+        }
+
+
+
+
+
+        .email-subject {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .email-sender {
+            font-size: 11px;
+            color: #4b5563; /* Darker gray for better visibility */
+            margin-bottom: 2px;
+        }
+
+        .email-time {
+            font-size: 10px;
+            color: #4b5563; /* Darker gray for better visibility */
+        }
+
+        .email-subject {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1f2937; /* Dark text for subject */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Info Cards */
+        .info-card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .info-card-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .info-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card-content {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .meeting-item, .email-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .meeting-item:last-child, .email-item:last-child {
+            border-bottom: none;
+        }
+
+        .meeting-item:hover, .email-item:hover {
+            background: #f8fafc;
+        }
+
+        .meeting-title, .email-subject {
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .meeting-time, .email-time {
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .meeting-attendees, .email-sender {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .task-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .task-due {
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .task-description {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        /* Delete buttons and item layout */
+        .meeting-item, .email-item, .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .meeting-content, .email-content, .task-content {
+            flex: 1;
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+            margin-left: 8px;
+            padding: 4px 6px;
+            transition: background-color 0.2s;
+            opacity: 0.7;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+            opacity: 1;
+        }
+
+        .delete-btn i {
+            font-size: 10px;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification-success {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+
+        .notification-error {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+
+        .notification-info {
+            border-left: 4px solid #3b82f6;
+            background: #eff6ff;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            min-width: 32px;
+            justify-content: center;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert styles */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .chat-section {
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 100 100" class="logo-icon">
+                    <defs>
+                        <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Brain/Intelligence Core -->
+                    <circle cx="50" cy="40" r="30" fill="url(#brainGradient)" opacity="0.9"/>
+                    
+                    <!-- Neural Network Lines -->
+                    <path d="M25 35 Q35 25 45 35 Q55 25 65 35 Q75 25 85 35" stroke="white" stroke-width="2" fill="none" opacity="0.7"/>
+                    <path d="M20 45 Q30 35 40 45 Q50 35 60 45 Q70 35 80 45" stroke="white" stroke-width="2" fill="none" opacity="0.5"/>
+                    
+                    <!-- Circuit Elements -->
+                    <circle cx="35" cy="40" r="3" fill="white" opacity="0.8"/>
+                    <circle cx="50" cy="35" r="3" fill="white" opacity="0.8"/>
+                    <circle cx="65" cy="40" r="3" fill="white" opacity="0.8"/>
+                    
+                    <!-- Central Intelligence Hub -->
+                    <circle cx="50" cy="40" r="8" fill="white" opacity="0.9"/>
+                    <circle cx="50" cy="40" r="5" fill="url(#circuitGradient)"/>
+                    
+                    <!-- Assistant Connection Lines -->
+                    <line x1="50" y1="68" x2="50" y2="75" stroke="url(#circuitGradient)" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="40" y1="75" x2="60" y2="75" stroke="url(#circuitGradient)" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="40" cy="75" r="2" fill="url(#circuitGradient)"/>
+                    <circle cx="60" cy="75" r="2" fill="url(#circuitGradient)"/>
+                    
+                    <!-- Smart Indicators -->
+                    <circle cx="25" cy="25" r="2" fill="#f59e0b" opacity="0.8">
+                        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="75" cy="25" r="2" fill="#10b981" opacity="0.8">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="75" cy="55" r="2" fill="#ef4444" opacity="0.8">
+                        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2.5s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+                <h1>IntelliAssist</h1>
+            </div>
+            <div class="connection-status">
+                <div class="status-badge" id="connectionStatus">
+                    <div class="status-dot disconnected"></div>
+                    <span>Disconnected</span>
+                </div>
+                <div class="connection-buttons">
+                    <button class="btn btn-primary" id="connectBtn" onclick="connectGoogle()">
+                        <i class="fab fa-google"></i>
+                        Connect Google
+                    </button>
+                    <button class="btn btn-outline-danger" id="disconnectBtn" onclick="disconnectGoogle()" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="meetingsCount">0</div>
+                <div class="stat-label">Today's Meetings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="emailsCount">0</div>
+                <div class="stat-label">Unread Emails</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="tasksCount">0</div>
+                <div class="stat-label">Pending Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="freeTime">8h</div>
+                <div class="stat-label">Free Time</div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <div class="chat-header">
+                    <h2>
+                        <i class="fas fa-comments"></i>
+                        AI Assistant
+                    </h2>
+                    <button class="btn btn-secondary btn-icon" onclick="clearChat()" title="Clear chat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message message-assistant">
+                        <div class="message-content">
+                            Hello! I'm your AI Executive Assistant. I can help you manage your calendar, check emails, and handle various tasks. How can I assist you today?
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="input-container">
+                        <textarea 
+                            class="chat-input" 
+                            id="chatInput" 
+                            placeholder="Ask me about your schedule, emails, or anything else..."
+                            rows="1"
+                            onkeydown="handleInputKeydown(event)"
+                        ></textarea>
+                        <button class="send-button" id="sendBtn" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                            Send
+                        </button>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button class="action-button" onclick="sendQuickMessage('Check my unread emails')">
+                                <i class="fas fa-envelope"></i> Check emails
+                            </button>
+                            <button class="action-button" onclick="sendQuickMessage('What meetings do I have today?')">
+                                <i class="fas fa-calendar-day"></i> Today's meetings
+                            </button>
+                            <button class="action-button" onclick="sendQuickMessage('When is my next free time?')">
+                                <i class="fas fa-clock"></i> Find free time
+                            </button>
+                            <button class="action-button" onclick="sendQuickMessage('Schedule a meeting for project review next week')">
+                                <i class="fas fa-calendar-plus"></i> Schedule a meeting
+                            </button>
+                            <button class="action-button" onclick="showCreateTaskModal()">
+                                <i class="fas fa-plus-circle"></i> Create task
+                            </button>
+                        </div>
+                        
+                        <!-- Separator line between sections -->
+                        <div class="section-separator" id="suggestionsSeparator" style="display: none;"></div>
+                        
+                        <div class="smart-suggestions" id="smartSuggestions" style="display: none;">
+                            <h4><i class="fas fa-lightbulb"></i> Smart Suggestions</h4>
+                            <div id="suggestionsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+
+                <!-- Priority Emails -->
+                <div class="info-card priority-emails">
+                    <div class="info-card-header">
+                        <div class="info-card-title">
+                            <i class="fas fa-envelope"></i>
+                            Recent Emails
+                        </div>
+
+                    </div>
+                    <div class="info-card-content" id="priorityEmailsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Tasks -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <div class="info-card-title">
+                            <i class="fas fa-tasks"></i>
+                            Pending Tasks
+                        </div>
+
+                    </div>
+                    <div class="info-card-content" id="tasksList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Meetings -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <div class="info-card-title">
+                            <i class="fas fa-calendar"></i>
+                            Upcoming Meetings
+                        </div>
+
+                    </div>
+                    <div class="info-card-content" id="meetingsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div id="createTaskModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Task</h3>
+                <button class="close-btn" onclick="hideCreateTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createTaskForm">
+                    <div class="form-group">
+                        <label for="taskTitle">Task Title *</label>
+                        <input type="text" id="taskTitle" required placeholder="Enter task title..." />
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Description</label>
+                        <textarea id="taskDescription" rows="3" placeholder="Optional description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">Due Date</label>
+                        <input type="date" id="taskDueDate" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideCreateTaskModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createTask()">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let isConnected = false;
+        let isLoading = false;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+            refreshDashboard();
+            
+            // Generate smart suggestions after loading
+            setTimeout(generateSmartSuggestions, 2000);
+            
+            // Auto-resize chat input
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
+            // Listen for OAuth completion from popup
+            window.addEventListener('message', function(event) {
+                if (event.data === 'auth_success') {
+                    // Reset the connect button
+                    const connectBtn = document.getElementById('connectBtn');
+                    if (connectBtn) {
+                        connectBtn.innerHTML = '<i class="fab fa-google"></i> Connect Google';
+                        connectBtn.disabled = false;
+                    }
+                    isLoading = false;
+                    
+                    // Show success message and refresh dashboard
+                    showAlert('success', 'Successfully connected to Google services!');
+                    updateConnectionStatus(true);
+                    refreshDashboard();
+                }
+            });
+        });
+
+        // Check application status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                updateConnectionStatus(data.authenticated);
+                
+                if (!data.ai_available) {
+                    showAlert('warning', 'AI features are disabled. Please check your Anthropic API key configuration.');
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusBadge = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            
+            if (connected) {
+                statusBadge.className = 'status-badge connected';
+                statusBadge.innerHTML = '<div class="status-dot connected"></div><span>Connected</span>';
+                connectBtn.innerHTML = '<i class="fas fa-check"></i> Connected';
+                connectBtn.disabled = true;
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'block';
+            } else {
+                statusBadge.className = 'status-badge disconnected';
+                statusBadge.innerHTML = '<div class="status-dot disconnected"></div><span>Disconnected</span>';
+                connectBtn.innerHTML = '<i class="fab fa-google"></i> Connect Google';
+                connectBtn.disabled = false;
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+            }
+        }
+
+        // Disconnect from Google services
+        async function disconnectGoogle() {
+            if (confirm('Are you sure you want to disconnect from Google services?')) {
+                try {
+                    const response = await fetch('/api/disconnect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.ok) {
+                        updateConnectionStatus(false);
+                        showAlert('success', 'Successfully disconnected from Google services');
+                        refreshDashboard();
+                    } else {
+                        throw new Error('Failed to disconnect');
+                    }
+                } catch (error) {
+                    console.error('Disconnect error:', error);
+                    showAlert('error', 'Failed to disconnect from Google services');
+                }
+            }
+        }
+
+        // Connect to Google services
+        async function connectGoogle() {
+            if (isLoading) return;
+            
+            const connectBtn = document.getElementById('connectBtn');
+            const originalContent = connectBtn.innerHTML;
+            
+            try {
+                isLoading = true;
+                connectBtn.innerHTML = '<div class="spinner"></div> Connecting...';
+                connectBtn.disabled = true;
+                
+                const response = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Server returned invalid response format');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.authenticated) {
+                    updateConnectionStatus(true);
+                    showAlert('success', 'Successfully connected to Google services!');
+                    refreshDashboard();
+                } else if (data.success && data.auth_url) {
+                    // Open the authorization URL in a new popup window with proper settings
+                    const authWindow = window.open(
+                        data.auth_url, 
+                        'google_auth', 
+                        'width=500,height=600,scrollbars=yes,resizable=yes,location=yes,menubar=no,toolbar=no,status=no'
+                    );
+                    
+                    if (!authWindow) {
+                        showAlert('error', 'Popup blocked! Please allow popups and try again.');
+                        connectBtn.innerHTML = '<i class="fab fa-google"></i> Connect Google';
+                        connectBtn.disabled = false;
+                        isLoading = false;
+                        return;
+                    }
+                    
+                    // Focus the popup window
+                    authWindow.focus();
+                    
+                    // Show message to user
+                    showAlert('info', 'Complete authorization in the popup window. The page will refresh automatically.');
+                    
+                    // Poll for authentication completion
+                    pollForAuthentication();
+                } else if (data.error && data.error.includes('credentials.json')) {
+                    showGoogleSetupInstructions();
+                } else {
+                    throw new Error(data.error || 'Authentication failed');
+                }
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showAlert('error', 'Failed to connect to Google services: ' + error.message);
+                connectBtn.innerHTML = originalContent;
+                connectBtn.disabled = false;
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Poll for authentication completion
+        function pollForAuthentication() {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    
+                    if (data.authenticated) {
+                        clearInterval(pollInterval);
+                        updateConnectionStatus(true);
+                        showAlert('success', 'Successfully connected to Google services!');
+                        refreshDashboard();
+                        
+                        // Reset the connect button
+                        const connectBtn = document.getElementById('connectBtn');
+                        connectBtn.innerHTML = '<i class="fas fa-check"></i> Connected';
+                        connectBtn.disabled = true;
+                        isLoading = false;
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    // Continue polling, don't stop on errors
+                }
+            }, 2000); // Poll every 2 seconds
+            
+            // Stop polling after 5 minutes
+            setTimeout(() => {
+                clearInterval(pollInterval);
+                if (isLoading) {
+                    showAlert('warning', 'Authentication timeout. Please try connecting again.');
+                    const connectBtn = document.getElementById('connectBtn');
+                    connectBtn.innerHTML = '<i class="fab fa-google"></i> Connect Google';
+                    connectBtn.disabled = false;
+                    isLoading = false;
+                }
+            }, 300000); // 5 minutes
+        }
+
+        // Refresh dashboard data
+        async function refreshDashboard() {
+            try {
+                const response = await fetch('/api/dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Dashboard data received:', data);
+                
+                if (data && data.success) {
+                    console.log('Updating stats:', data.stats);
+                    updateStats(data.stats || {});
+                    updateMeetings(data.meetings || []);
+                    updateEmails(data.emails || []);
+                    updateTasks(data.tasks || []);
+                    updateConnectionStatus(data.authenticated || false);
+                    
+                    if (data.message) {
+                        showAlert('info', data.message);
+                    }
+                } else {
+                    // Clear data and show actual status
+                    updateStats({
+                        meetings: 0,
+                        emails: 0,
+                        tasks: 0,
+                        free_time: 0
+                    });
+                    updateMeetings([]);
+                    updateEmails([]);
+                    updateTasks([]);
+                    updateConnectionStatus(false);
+                    
+                    if (data && data.error) {
+                        console.error('Dashboard error:', data.error);
+                        showAlert('error', `Dashboard error: ${data.error}`);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Dashboard error details:', error);
+                console.error('Error stack:', error.stack);
+                
+                // Clear data on error instead of showing fallback
+                updateStats({
+                    meetings: 0,
+                    emails: 0,
+                    tasks: 0,
+                    free_time: 0
+                });
+                showEmptyState('meetingsList', 'Connect to Google to see meetings');
+                showEmptyState('priorityEmailsList', 'Connect to Google to see emails');
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update statistics
+        function updateStats(stats) {
+            console.log('updateStats called with:', stats);
+            
+            try {
+                const meetingsEl = document.getElementById('meetingsCount');
+                const emailsEl = document.getElementById('emailsCount');
+                const tasksEl = document.getElementById('tasksCount');
+                const freeTimeEl = document.getElementById('freeTime');
+                
+                console.log('Elements found:', {
+                    meetings: !!meetingsEl,
+                    emails: !!emailsEl,
+                    tasks: !!tasksEl,
+                    freeTime: !!freeTimeEl
+                });
+                
+                if (meetingsEl) meetingsEl.textContent = stats.meetings || 0;
+                if (emailsEl) emailsEl.textContent = stats.emails || 0;
+                if (tasksEl) tasksEl.textContent = stats.tasks || 0;
+                if (freeTimeEl) freeTimeEl.textContent = stats.free_time !== undefined ? stats.free_time : 0;
+                
+                console.log('Stats updated successfully');
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        // Update meetings list
+        function updateMeetings(meetings) {
+            const container = document.getElementById('meetingsList');
+            
+            if (!meetings || meetings.length === 0) {
+                showEmptyState('meetingsList', 'No upcoming meetings');
+                return;
+            }
+            
+            container.innerHTML = meetings.map(meeting => `
+                <div class="meeting-item">
+                    <div class="meeting-content">
+                        <div class="meeting-title">${escapeHtml(meeting.title)}</div>
+                        <div class="meeting-time">${meeting.time}</div>
+                        <div class="meeting-attendees">${meeting.attendees ? meeting.attendees.length + ' attendees' : 'No attendees'}</div>
+                    </div>
+                    ${meeting.event_id ? `<button class="delete-btn" onclick="deleteMeeting('${meeting.event_id}')" title="Delete meeting">
+                        <i class="fas fa-trash"></i>
+                    </button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Update emails list
+        function updateEmails(emails) {
+            const container = document.getElementById('priorityEmailsList');
+            
+            if (!container) {
+                console.error('priorityEmailsList container not found in DOM');
+                return;
+            }
+            
+            if (!emails || emails.length === 0) {
+                showEmptyState('priorityEmailsList', 'No recent emails');
+                return;
+            }
+            
+            container.innerHTML = emails.map(email => {
+                return `
+                    <div class="email-item">
+                        <div class="email-content">
+                            <div class="email-subject">${escapeHtml(email.subject)}</div>
+                            <div class="email-time">${email.time}</div>
+                            <div class="email-sender">${escapeHtml(email.sender)}</div>
+                        </div>
+                        ${email.gmail_id ? `<button class="delete-btn" onclick="deleteEmail('${email.gmail_id}')" title="Delete email">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update tasks list
+        function updateTasks(tasks) {
+            const container = document.getElementById('tasksList');
+            
+            if (!tasks || tasks.length === 0) {
+                showEmptyState('tasksList', 'No pending tasks');
+                return;
+            }
+            
+            container.innerHTML = tasks.map(task => {
+                const priorityClass = task.priority === 'High' ? 'priority-high' : 
+                                    task.priority === 'Medium' ? 'priority-medium' : 'priority-low';
+                
+                const dueDate = task.due_date ? `Due: ${task.due_date}` : 'No due date';
+                
+                return `
+                    <div class="task-item ${priorityClass}">
+                        <div class="task-content">
+                            <div class="task-title">${escapeHtml(task.title)}</div>
+                            <div class="task-due">${dueDate}</div>
+                            ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                        </div>
+                        ${task.task_id && task.source === 'google_tasks' ? `<button class="delete-btn" onclick="deleteTask('${task.task_id}')" title="Delete task">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Refresh priority emails
+        async function refreshEmails() {
+            try {
+                const response = await fetch('/api/priority-emails');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.success && data.emails) {
+                    updatePriorityEmails(data.emails);
+                } else {
+                    showEmptyState('priorityEmailsList', 'No priority emails available');
+                }
+            } catch (error) {
+                console.error('Priority emails error:', error);
+                showEmptyState('priorityEmailsList', 'Unable to load emails - try refreshing');
+            }
+        }
+
+        // Refresh meetings only
+        async function refreshMeetings() {
+            try {
+                const response = await fetch('/api/dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.success && data.meetings) {
+                    updateMeetings(data.meetings);
+                } else {
+                    showEmptyState('meetingsList', 'No meetings found');
+                }
+            } catch (error) {
+                console.error('Meetings refresh error:', error);
+                showEmptyState('meetingsList', 'Unable to load meetings - try refreshing');
+            }
+        }
+
+        // Refresh tasks only
+        async function refreshTasks() {
+            try {
+                const response = await fetch('/api/dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data && data.success && data.tasks) {
+                    updateTasks(data.tasks);
+                } else {
+                    showEmptyState('tasksList', 'No tasks found');
+                }
+            } catch (error) {
+                console.error('Tasks refresh error:', error);
+                showEmptyState('tasksList', 'Unable to load tasks - try refreshing');
+            }
+        }
+
+        // Update priority emails
+        function updatePriorityEmails(emails) {
+            const container = document.getElementById('priorityEmailsList');
+            
+            if (!emails || emails.length === 0) {
+                showEmptyState('priorityEmailsList', 'No priority emails');
+                return;
+            }
+            
+            container.innerHTML = emails.map(email => {
+                const timeAgo = formatTimeAgo(email.timestamp);
+                
+                return `
+                    <div class="email-item" onclick="openEmail('${email.gmail_id}')">
+                        <div class="email-subject">
+                            <span>${escapeHtml(email.subject)}</span>
+                        </div>
+                        <div class="email-sender">${escapeHtml(email.sender)}</div>
+                        <div class="email-time">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Format time ago
+        function formatTimeAgo(timestamp) {
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diffMs = now - time;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return `${diffDays}d ago`;
+        }
+
+        // Mark task as complete
+        async function markTaskComplete(taskTitle) {
+            try {
+                const response = await fetch('/api/tasks/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: taskTitle })
+                });
+                
+                if (response.ok) {
+                    showAlert('success', 'Task marked as complete!');
+                    refreshDashboard();
+                }
+            } catch (error) {
+                console.error('Error completing task:', error);
+                showAlert('error', 'Failed to mark task as complete');
+            }
+        }
+
+        // Open email (placeholder for future implementation)
+        function openEmail(emailId) {
+            showAlert('info', 'Email functionality coming soon!');
+        }
+
+        // Show empty state
+        function showEmptyState(containerId, message) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        // Chat functionality
+        function handleInputKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function sendQuickMessage(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || isLoading) return;
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                isLoading = true;
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessageToChat('assistant', data.response);
+                } else {
+                    addMessageToChat('assistant', 'Sorry, I encountered an error: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessageToChat('assistant', 'Sorry, I\'m having trouble processing your request right now.');
+            } finally {
+                hideTypingIndicator();
+                isLoading = false;
+                updateSendButton();
+            }
+        }
+
+        function addMessageToChat(role, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message message-${role}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${escapeHtml(content)}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'typing-indicator';
+            
+            typingDiv.innerHTML = `
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span>AI is typing...</span>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function updateSendButton() {
+            const sendBtn = document.getElementById('sendBtn');
+            const input = document.getElementById('chatInput');
+            
+            sendBtn.disabled = isLoading || !input.value.trim();
+            
+            if (isLoading) {
+                sendBtn.innerHTML = '<div class="spinner"></div> Sending...';
+            } else {
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            }
+        }
+
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="chat-message message-assistant">
+                    <div class="message-content">
+                        Hello! I'm your AI Executive Assistant. I can help you manage your calendar, check emails, and handle various tasks. How can I assist you today?
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show alert messages
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'exclamation-triangle'}"></i>
+                <span>${escapeHtml(message)}</span>
+            `;
+            
+            // Insert at the top of the container
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <span>${escapeHtml(message)}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; font-size: 16px; cursor: pointer; margin-left: 10px;">&times;</button>
+            `;
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Send quick message
+        function sendQuickMessage(message) {
+            document.getElementById('chatInput').value = message;
+            sendMessage();
+        }
+
+        // Smart suggestions functionality
+        async function generateSmartSuggestions() {
+            try {
+                const response = await fetch('/api/smart-suggestions');
+                const data = await response.json();
+                
+                if (data.success && data.suggestions && data.suggestions.length > 0) {
+                    displaySmartSuggestions(data.suggestions);
+                }
+            } catch (error) {
+                console.log('Smart suggestions not available');
+            }
+        }
+
+        function displaySmartSuggestions(suggestions) {
+            const suggestionsContainer = document.getElementById('smartSuggestions');
+            const suggestionsList = document.getElementById('suggestionsList');
+            const separator = document.getElementById('suggestionsSeparator');
+            
+            if (!suggestionsContainer || !suggestionsList) return;
+            
+            suggestionsList.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = suggestion;
+                item.onclick = () => sendQuickMessage(suggestion);
+                suggestionsList.appendChild(item);
+            });
+            
+            // Show both the separator and suggestions container
+            if (separator) separator.style.display = 'block';
+            suggestionsContainer.style.display = 'block';
+        }
+
+        // Enhanced dashboard refresh with smart suggestions
+        function refreshDashboardWithSuggestions() {
+            refreshDashboard();
+            setTimeout(generateSmartSuggestions, 1000);
+        }
+
+        // Show Google setup instructions
+        function showGoogleSetupInstructions() {
+            const modal = document.createElement('div');
+            modal.className = 'setup-modal';
+            modal.innerHTML = `
+                <div class="setup-modal-content">
+                    <div class="setup-modal-header">
+                        <h3><i class="fab fa-google"></i> Google Setup Required</h3>
+                        <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+                    </div>
+                    <div class="setup-modal-body">
+                        <p>To use Google Calendar and Gmail features, you need to set up Google OAuth credentials:</p>
+                        
+                        <div class="setup-step">
+                            <strong>Step 1:</strong> Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>
+                        </div>
+                        
+                        <div class="setup-step">
+                            <strong>Step 2:</strong> Create a new OAuth 2.0 Client ID
+                        </div>
+                        
+                        <div class="setup-step">
+                            <strong>Step 3:</strong> Add this redirect URI:<br>
+                            <code>${window.location.origin}/google_login/callback</code>
+                        </div>
+                        
+                        <div class="setup-step">
+                            <strong>Step 4:</strong> Download the credentials.json file
+                        </div>
+                        
+                        <div class="setup-step">
+                            <strong>Step 5:</strong> Upload it to the credentials/ folder in your project
+                        </div>
+                        
+                        <p><strong>Note:</strong> You can still use the AI assistant features without Google integration. Task management, smart suggestions, and general conversation work independently.</p>
+                    </div>
+                    <div class="setup-modal-footer">
+                        <button class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">Continue Without Google</button>
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="btn btn-primary">Open Google Console</a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Initialize application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dashboard
+            refreshDashboard();
+            
+            // Load priority sections
+            refreshEmails();
+            
+            // Generate smart suggestions
+            setTimeout(generateSmartSuggestions, 2000);
+        });
+
+        // Update send button state on input change
+        document.getElementById('chatInput').addEventListener('input', updateSendButton);
+        updateSendButton(); // Initial state
+
+        // Delete functions
+        async function deleteEmail(emailId) {
+            if (!confirm('Are you sure you want to delete this email?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/emails/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email_id: emailId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Email deleted successfully', 'success');
+                    refreshDashboard(); // Refresh dashboard to update counts
+                } else {
+                    showNotification('Failed to delete email: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting email:', error);
+                showNotification('Error deleting email', 'error');
+            }
+        }
+
+        async function deleteMeeting(eventId) {
+            if (!confirm('Are you sure you want to delete this meeting?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/meetings/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ event_id: eventId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Meeting deleted successfully', 'success');
+                    refreshDashboard(); // Refresh dashboard to update counts
+                } else {
+                    showNotification('Failed to delete meeting: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting meeting:', error);
+                showNotification('Error deleting meeting', 'error');
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/tasks/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('Task deleted successfully', 'success');
+                    refreshDashboard(); // Refresh dashboard to update counts
+                } else {
+                    showNotification('Failed to delete task: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                showNotification('Error deleting task', 'error');
+            }
+        }
+
+        // Task Modal Functions
+        function showCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'flex';
+            document.getElementById('taskTitle').focus();
+        }
+
+        function hideCreateTaskModal() {
+            document.getElementById('createTaskModal').style.display = 'none';
+            // Clear the form
+            document.getElementById('createTaskForm').reset();
+        }
+
+        function createTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const description = document.getElementById('taskDescription').value.trim();
+            const dueDate = document.getElementById('taskDueDate').value;
+
+            if (!title) {
+                showAlert('error', 'Task title is required');
+                return;
+            }
+
+            fetch('/api/create-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    description: description,
+                    due_date: dueDate || null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message || 'Task created successfully!');
+                    hideCreateTaskModal();
+                    // Refresh dashboard to show updated task count
+                    refreshDashboard();
+                } else {
+                    if (data.action_required === 'enable_api' && data.instructions) {
+                        showTasksApiInstructions(data.error, data.instructions);
+                    } else {
+                        showAlert('error', data.error || 'Failed to create task');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error creating task:', error);
+                showAlert('error', 'Failed to create task. Please try again.');
+            });
+        }
+
+        // Close modal when clicking outside of it
+        document.getElementById('createTaskModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCreateTaskModal();
+            }
+        });
+
+        // Handle Enter key in task title field
+        document.getElementById('taskTitle').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createTask();
+            }
+        });
+
+        // Show Google Tasks API setup instructions
+        function showTasksApiInstructions(error, instructions) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-warning';
+            alertDiv.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Google Tasks API Setup Required</strong>
+                </div>
+                <div style="margin-bottom: 12px; font-size: 14px;">${escapeHtml(error)}</div>
+                <div style="margin-bottom: 12px;">
+                    <strong>To enable Google Tasks:</strong>
+                    <ol style="margin: 8px 0; padding-left: 20px;">
+                        <li>Go to <a href="https://console.developers.google.com/apis/api/tasks.googleapis.com/overview?project=690649569698" target="_blank" style="color: var(--primary);">Google Cloud Console</a></li>
+                        <li>Click "Enable" for the Google Tasks API</li>
+                        <li>Wait a few minutes for the API to activate</li>
+                        <li>Return here and try creating a task again</li>
+                    </ol>
+                </div>
+                <button class="btn btn-secondary" onclick="this.parentElement.remove()" style="font-size: 12px; padding: 6px 12px;">
+                    Got it
+                </button>
+            `;
+            
+            // Insert at the top of the container
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-remove after 30 seconds
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 30000);
+        }
+    </script>
+</body>
+</html>
