@@ -1,10 +1,10 @@
 # IntelliAssist
 
-An AI-powered executive assistant web application that seamlessly integrates Google services for comprehensive email, calendar, and task management.
+An AI-powered executive assistant web application that seamlessly integrates Google services for comprehensive email, calendar, and task management. Built with Claude and Replit.
 
 ## Features
 
-- **Smart Email Management**: View, prioritize, and manage Gmail messages with AI-powered insights
+- **Smart Email Management**: View, prioritise, and manage Gmail messages with AI-powered insights
 - **Intelligent Calendar**: Schedule meetings, find free time slots, and manage calendar events
 - **Task Automation**: Create, track, and complete tasks with Google Tasks integration
 - **Natural Language Processing**: Interact with your assistant using conversational language
@@ -49,7 +49,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
 3. **Set up Google OAuth:**
    - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
    - Create a new OAuth 2.0 Client ID
-   - Add your domain to Authorized redirect URIs
+   - Add your domain to Authorised redirect URIs
    - Download credentials and save as `credentials/credentials.json`
 
 4. **Configure environment variables:**
