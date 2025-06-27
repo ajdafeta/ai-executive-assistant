@@ -4,7 +4,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
 
 ![Executive Assistant](https://img.shields.io/badge/AI-Claude%20Sonnet%204-blue) ![Python](https://img.shields.io/badge/Python-3.11+-green) ![License](https://img.shields.io/badge/License-Apache2.0-yellow)
 
-## Features
+## 🚀 Features
 
 - **Smart Email Management**: View, prioritise, and manage Gmail messages with AI-powered insights
 - **Intelligent Calendar**: Schedule meetings, find free time slots, and manage calendar events
@@ -13,7 +13,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
 - **Real-time Dashboard**: Auto-refreshing dashboard with live data from Google services
 - **Google OAuth Integration**: Secure authentication with Gmail, Calendar, and Tasks APIs
 
-## Tech Stack
+## 🛠️ Technology Stack
 
 **Backend:**
 - Python Flask web framework
@@ -28,7 +28,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
 - Font Awesome icons
 - Real-time data updates
 
-## Setup Instructions
+## 📋 Setup Instructions
 
 ### Prerequisites
 - Python 3.11+
@@ -65,7 +65,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
    python main.py
    ```
 
-## Environment Variables
+## 🧩 Environment Variables
 
 Create a `.env` file with:
 
@@ -76,7 +76,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 SESSION_SECRET=your_session_secret
 ```
 
-## Usage
+## 🎯 Usage
 
 1. Navigate to the application URL
 2. Click "Connect Google Account" to authenticate
@@ -84,7 +84,26 @@ SESSION_SECRET=your_session_secret
 4. Use the dashboard to view your data
 5. Interact with the AI assistant using natural language
 
-## Key Components
+## 🏗️ Architecture
+
+The application follows a modular architecture:
+
+```
+├── README.md                 # Main project overview
+├── CAPABILITIES.md           # Detailed feature documentation  
+├── API_DOCUMENTATION.md      # Technical API reference
+├── .gitignore               # Security exclusions
+├── main.py                  # Application entry point
+├── run_assistant.py         # Core application logic
+├── google_backend.py        # Google services integration
+├── models.py               # Data models
+├── config.py               # Configuration management
+├── task_manager.py         # Task management features
+├── executive_assistant.html # Frontend interface
+└── .env.template           # Environment variables template
+```
+
+### Key Components
 
 - **GoogleAuthManager**: Handles OAuth authentication flow
 - **GoogleCalendarService**: Manages calendar operations
@@ -93,14 +112,14 @@ SESSION_SECRET=your_session_secret
 - **CalendarAgent**: AI-powered calendar management
 - **ContextMemory**: Maintains conversation context
 
-## Security
+## 🔒 Security
 
 - All API keys stored securely in environment variables
 - Google OAuth credentials managed through secure flow
 - Session management with configurable secrets
 - CORS configured for cross-origin requests
 
-## Contributing
+## 👥 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -108,10 +127,10 @@ SESSION_SECRET=your_session_secret
 4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 📜 License
 
 Apache 2.0 - see LICENSE file for details
 
-## Support
+## 👩🏾‍💻 Support
 
 For issues and questions, please open a GitHub issue or contact the development team.
