@@ -1,8 +1,8 @@
-# IntelliAssist 🧠
+# IntelliAssist
 
 An AI-powered executive assistant web application that seamlessly integrates Google services for comprehensive email, calendar, and task management with advanced conversational intelligence.
 
-![IntelliAssist Dashboard](https://via.placeholder.com/800x400/2563eb/ffffff?text=IntelliAssist+Dashboard)
+![Exectutive Assistant](https://img.shields.io/badge/AI-Claude%20Sonnet%204-blue) ![Python](https://img.shields.io/badge/Python-3.11+-green) ![License](https://img.shields.io/badge/License-Apache2.0-yellow)
 
 ## 🌟 Features
 
