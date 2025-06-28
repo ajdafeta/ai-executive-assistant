@@ -6,7 +6,7 @@ An AI-powered executive assistant web application that seamlessly integrates Goo
 
 ## 🚀 Features
 
-- **Smart Email Management**: View, prioritise, and manage Gmail messages with AI-powered insights
+- **Email Management**: View and manage Gmail messages
 - **Intelligent Calendar**: Schedule meetings, find free time slots, and manage calendar events
 - **Task Automation**: Create, track, and complete tasks with Google Tasks integration
 - **Natural Language Processing**: Interact with your assistant using conversational language
