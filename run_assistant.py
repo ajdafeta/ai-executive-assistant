@@ -440,19 +440,21 @@ class ExecutiveAssistantApp:
             intent = self._determine_intent(message)
             logger.info(f"Detected intent: {intent}")
 
-            # Route to appropriate handler
+            # Route to appropriate handler with conversation context
+            conversation_context = self.memory.get_context()
+            
             if intent == 'calendar' and self.calendar_agent:
-                result = self.calendar_agent.handle_request(message)
+                result = self.calendar_agent.handle_request(message, context=conversation_context)
                 response_text = result.get('response', 'I encountered an error processing your calendar request.')
                 
             elif intent == 'email':
-                response_text = self._handle_email_request(message)
+                response_text = self._handle_email_request(message, context=conversation_context)
                 
             elif intent == 'task':
-                response_text = self._handle_task_request(message)
+                response_text = self._handle_task_request(message, context=conversation_context)
                 
             else:
-                response_text = self._handle_general_request(message)
+                response_text = self._handle_general_request(message, context=conversation_context)
 
             # Add assistant response to memory
             self.memory.add_message("assistant", response_text)
@@ -504,19 +506,72 @@ Return just the category name."""
             logger.error(f"Error determining intent: {e}")
             return 'general'
 
-    def _handle_email_request(self, message):
+    def _handle_email_request(self, message, context=None):
         """Handle email-related requests"""
         if not self.gmail_service:
             return "Email service is not available. Please authenticate with Google first."
 
         try:
-            if any(word in message.lower() for word in ['unread', 'check', 'inbox']):
+            # Check if this is a send email request (must contain "send" or "compose" or "write to")
+            if any(phrase in message.lower() for phrase in ['send this email', 'send an email', 'compose', 'write to', 'email to']):
+                return self._handle_send_email_request(message, context)
+            
+            # Check for reading/analyzing emails (inbox checking, urgent emails, etc.)
+            elif any(word in message.lower() for word in ['check', 'inbox', 'unread', 'urgent', 'emails', 'priority']):
+                return self._handle_check_emails_request(message, context)
+                
+        except Exception as e:
+            logger.error(f"Error handling email request: {e}")
+            return f"Error handling email request: {str(e)}"
+                
+        except Exception as e:
+            logger.error(f"Error handling email request: {e}")
+            return f"Error handling email request: {str(e)}"
+
+        # Handle follow-up questions or conversational requests
+        if context and len(context) > 0:
+            if any(word in message.lower() for word in ['follow up', 'next', 'then', 'after']):
+                return "I can help you check for new unread emails, search for specific messages, or manage your inbox. What would you like me to do next?"
+        
+        return "I can help you check unread emails, send messages, or manage your inbox. What would you like me to do?"
+
+    def _handle_check_emails_request(self, message, context=None):
+        """Handle requests to check, read, or analyze emails"""
+        try:
+            # Check for urgent emails specifically
+            if 'urgent' in message.lower():
+                emails = self.gmail_service.get_messages(query='is:unread', max_results=10)
+                
+                if not emails:
+                    return "You have no unread emails! Your inbox is clear."
+                
+                # Use AI to analyze for urgency
+                urgent_emails = []
+                for email in emails:
+                    # Check for urgent keywords in subject or sender
+                    urgent_keywords = ['urgent', 'asap', 'emergency', 'important', 'deadline', 'overdue', 'critical']
+                    if any(keyword in email.subject.lower() for keyword in urgent_keywords):
+                        urgent_emails.append(email)
+                
+                if not urgent_emails:
+                    return f"I checked your {len(emails)} unread emails and found no urgent messages. All emails appear to be routine communications from Google and other services."
+                
+                response = f"🚨 Found {len(urgent_emails)} urgent emails:\n\n"
+                for i, email in enumerate(urgent_emails, 1):
+                    response += f"{i}. **{email.subject}**\n"
+                    response += f"   From: {email.sender}\n"
+                    response += f"   Priority: {email.priority}\n\n"
+                
+                return response
+            
+            # Default to showing unread emails
+            else:
                 emails = self.gmail_service.get_messages(query='is:unread', max_results=5)
                 
                 if not emails:
-                    return "You have no unread emails! 📧✨"
+                    return "You have no unread emails! Your inbox is clear."
 
-                response = f"📧 You have {len(emails)} unread emails:\n\n"
+                response = f"You have {len(emails)} unread emails:\n\n"
                 for i, email in enumerate(emails, 1):
                     response += f"{i}. **{email.subject}**\n"
                     response += f"   From: {email.sender}\n"
@@ -525,83 +580,214 @@ Return just the category name."""
                 return response
                 
         except Exception as e:
-            logger.error(f"Error handling email request: {e}")
+            logger.error(f"Error checking emails: {e}")
             return f"Error checking emails: {str(e)}"
 
-        return "I can help you check unread emails, send messages, or manage your inbox. What would you like me to do?"
-
-    def _handle_task_request(self, message):
-        """Handle task-related requests"""
+    def _handle_send_email_request(self, message, context=None):
+        """Handle email sending requests using AI to parse details"""
         try:
-            from task_manager import TaskManager
+            if not self.anthropic_client:
+                return "AI service is not available for parsing email details."
             
-            if not hasattr(self, 'task_manager'):
-                self.task_manager = TaskManager(self.anthropic_client)
+            # Use AI to extract email details
+            extraction_prompt = f"""Extract email details from this request. Return ONLY a JSON object with this exact format:
+
+{{
+    "to": "recipient email address",
+    "subject": "email subject line", 
+    "body": "email body content"
+}}
+
+User request: "{message}"
+
+Extract the recipient email, generate an appropriate subject if not provided, and use the email content as the body. Return ONLY the JSON object, nothing else."""
+
+            response = self.anthropic_client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=500,
+                messages=[{"role": "user", "content": extraction_prompt}]
+            )
             
-            # Handle different task operations
-            if any(word in message.lower() for word in ['create', 'add', 'new task']):
-                # Parse task details from message using AI
-                result = self.task_manager.create_task_from_message(message)
+            # Extract response text
+            response_text = ""
+            if hasattr(response.content[0], 'text'):
+                response_text = response.content[0].text
+            else:
+                response_text = str(response.content[0])
+            
+            # Parse JSON response
+            import json
+            try:
+                email_details = json.loads(response_text.strip())
+            except json.JSONDecodeError:
+                # Try to extract JSON from the response if it's wrapped in text
+                import re
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    email_details = json.loads(json_match.group())
+                else:
+                    return "I couldn't parse the email details from your request. Please specify the recipient, subject, and message content clearly."
+            
+            # Validate required fields
+            if not email_details.get('to') or not email_details.get('body'):
+                return "I need at least a recipient email address and message content to send an email."
+            
+            # Send the email
+            try:
+                success = self.gmail_service.send_message(
+                    to=email_details['to'],
+                    subject=email_details.get('subject', 'No Subject'),
+                    body=email_details['body']
+                )
                 
-                # If Google Tasks is available, also create in Google Tasks
-                if result['success'] and hasattr(self, 'tasks_service') and self.tasks_service:
-                    try:
-                        # Extract task details
-                        task_title = result.get('task', {}).get('title', '')
-                        task_description = result.get('task', {}).get('description', '')
-                        task_due_date = result.get('task', {}).get('due_date', None)
+                if success:
+                    return f"✅ Email sent successfully to {email_details['to']}!\n\nSubject: {email_details.get('subject', 'No Subject')}"
+                else:
+                    return "Failed to send email. Please check the recipient address and try again."
+                    
+            except Exception as e:
+                logger.error(f"Error sending email: {e}")
+                return f"Error sending email: {str(e)}"
+                
+        except Exception as e:
+            logger.error(f"Error parsing email request: {e}")
+            return f"Error processing email request: {str(e)}"
+
+    def _handle_task_request(self, message, context=None):
+        """Handle task-related requests using Google Tasks"""
+        try:
+            self.memory.add_message("user", message)
+            
+            if not hasattr(self, 'tasks_service') or not self.tasks_service:
+                return "Google Tasks is not connected. Please authenticate with Google first."
+            
+            if any(word in message.lower() for word in ['create', 'creat', 'add', 'new', 'make']) or 'task' in message.lower():
+                # Check if this is just a general request to create a task without details
+                if any(phrase in message.lower() for phrase in ['i want to create', 'create a new task', 'create new task', 'make a task']) and len(message.split()) < 8:
+                    self.memory.add_message("user", message)
+                    response = "I'd be happy to help you create a new task! Please tell me:\n\n• What's the task about?\n• Any specific deadline?\n• How important is it?\n\nFor example: 'Create task: Review quarterly budget by Friday - high priority'"
+                    self.memory.add_message("assistant", response)
+                    return response
+                
+                # Extract task details from message using AI
+                extraction_prompt = f"""Extract task details from this request. Return a JSON object.
+
+User request: "{message}"
+
+Extract and return ONLY a JSON object like this:
+{{
+    "title": "extracted task title",
+    "description": "extracted description (optional)",
+    "due_date": "YYYY-MM-DD (optional)"
+}}"""
+
+                try:
+                    response = self.anthropic_client.messages.create(
+                        model="claude-sonnet-4-20250514",
+                        max_tokens=200,
+                        messages=[{"role": "user", "content": extraction_prompt}]
+                    )
+                    
+                    extraction_text = response.content[0].text if hasattr(response.content[0], 'text') else str(response.content[0])
+                    
+                    # Parse JSON
+                    import json, re
+                    json_match = re.search(r'\{.*\}', extraction_text, re.DOTALL)
+                    if json_match:
+                        task_data = json.loads(json_match.group())
                         
-                        # Create in Google Tasks
-                        google_result = self.tasks_service.create_task(
-                            title=task_title,
-                            description=task_description,
-                            due_date=task_due_date
+                        # Create task in Google Tasks
+                        due_date = task_data.get('due_date')
+                        if due_date:
+                            from datetime import datetime
+                            due_date = datetime.strptime(due_date, '%Y-%m-%d')
+                        
+                        task_id = self.tasks_service.create_task(
+                            title=task_data.get('title', 'New Task'),
+                            description=task_data.get('description', ''),
+                            due_date=due_date
                         )
                         
-                        if google_result and google_result.get('success'):
-                            return f"✓ {result['message']}\n📱 Task also created in Google Tasks"
+                        if task_id:
+                            response_text = f"Task created: {task_data.get('title', 'New Task')}"
+                            self.memory.add_message("assistant", response_text)
+                            return response_text
                         else:
-                            return f"✓ {result['message']}\n⚠️ Note: Could not sync to Google Tasks (API may need enabling)"
-                            
-                    except Exception as e:
-                        logger.warning(f"Failed to create Google Task: {e}")
-                        return f"✓ {result['message']}\n⚠️ Note: Could not sync to Google Tasks"
-                
-                # Return local task creation result
-                if result['success']:
-                    return f"✓ {result['message']}"
-                else:
-                    return f"Error creating task: {result['error']}"
+                            return "Failed to create task in Google Tasks. Please try again."
+                    
+                except Exception as e:
+                    logger.error(f"Error creating task: {e}")
+                    logger.error(f"Task creation failed for message: {message}")
+                    return f"I couldn't understand the task details. Error: {str(e)}. Please try: 'Create task: [task name]'"
             
             elif any(word in message.lower() for word in ['complete', 'done', 'finish']):
-                # Extract task title and complete it
-                summary = self.task_manager.get_task_summary()
-                pending_tasks = self.task_manager.get_pending_tasks()
+                # Get current Google Tasks
+                tasks = self.tasks_service.get_tasks(show_completed=False)
                 
-                if pending_tasks:
-                    tasks_list = "\n".join([f"- {task['title']}" for task in pending_tasks[:5]])
-                    return f"You have {summary['pending']} pending tasks:\n{tasks_list}\n\nTo complete a task, say 'complete [task name]'"
+                if not tasks:
+                    return "You have no pending tasks to complete."
+                
+                # Extract task name from message
+                words = message.lower().split()
+                task_keywords = ['complete', 'done', 'finish']
+                task_name = ""
+                
+                for keyword in task_keywords:
+                    if keyword in words:
+                        task_start = words.index(keyword) + 1
+                        task_name = ' '.join(words[task_start:])
+                        break
+                
+                if not task_name:
+                    # List available tasks for completion
+                    tasks_list = "\n".join([f"- {task.title}" for task in tasks[:5]])
+                    return f"Please specify which task to complete:\n{tasks_list}"
+                
+                # Find matching task
+                matching_task = None
+                for task in tasks:
+                    if task_name.lower() in task.title.lower():
+                        matching_task = task
+                        break
+                
+                if matching_task:
+                    # Mark task as completed in Google Tasks - use google_task_id
+                    success = self.tasks_service.delete_task(matching_task.google_task_id)
+                    if success:
+                        response_text = f"Completed task: {matching_task.title}"
+                        self.memory.add_message("assistant", response_text)
+                        return response_text
+                    else:
+                        return "Failed to complete the task. Please try again."
                 else:
-                    return "You have no pending tasks! Great work."
+                    tasks_list = "\n".join([f"- {task.title}" for task in tasks[:5]])
+                    return f"Task '{task_name}' not found. Available tasks:\n{tasks_list}"
             
-            elif any(word in message.lower() for word in ['list', 'show', 'tasks']):
-                summary = self.task_manager.get_task_summary()
-                pending_tasks = self.task_manager.get_pending_tasks()
-                overdue_tasks = self.task_manager.get_overdue_tasks()
+            elif any(word in message.lower() for word in ['today', 'list', 'show', 'tasks']):
+                # Get Google Tasks
+                tasks = self.tasks_service.get_tasks(show_completed=False)
                 
-                response = f"📋 Task Summary:\n"
-                response += f"• {summary['pending']} pending tasks\n"
-                response += f"• {summary['completed']} completed\n"
+                if not tasks:
+                    return "You have no pending tasks. Great job staying on top of things!"
                 
-                if overdue_tasks:
-                    response += f"• {len(overdue_tasks)} overdue\n"
+                response = f"Your pending tasks ({len(tasks)} total):\n\n"
                 
-                if pending_tasks:
-                    response += f"\nNext 3 tasks:\n"
-                    for task in pending_tasks[:3]:
-                        priority_emoji = "🔴" if task['priority'] == 'high' else "🟡" if task['priority'] == 'medium' else "🟢"
-                        response += f"{priority_emoji} {task['title']}\n"
+                for i, task in enumerate(tasks[:10], 1):  # Show up to 10 tasks
+                    title = task.title
+                    due_date = task.due_date
+                    
+                    task_line = f"{i}. {title}"
+                    if due_date:
+                        try:
+                            task_line += f" (Due: {due_date.strftime('%m/%d')})"
+                        except:
+                            pass
+                    
+                    response += task_line + "\n"
                 
+                response += "\nTo complete a task, say 'complete [task name]'"
+                
+                self.memory.add_message("assistant", response)
                 return response
             
             else:
@@ -611,7 +797,7 @@ Return just the category name."""
             logger.error(f"Error handling task request: {e}")
             return f"Error managing tasks: {str(e)}"
 
-    def _handle_general_request(self, message):
+    def _handle_general_request(self, message, context=None):
         """Handle general conversation requests"""
         try:
             from datetime import datetime
@@ -631,18 +817,21 @@ Return just the category name."""
                 context += "\n\nNote: The user hasn't connected their Google services yet. You can help them with general questions and guide them to connect Google for calendar and email features."
 
             # Get conversation context
-            conversation_context = self.memory.get_context()
+            conversation_context = context if context else self.memory.get_context()
             context_str = ""
             if conversation_context:
-                context_str = "\n\nPrevious conversation:\n"
-                for msg in conversation_context[-4:]:  # Last 4 messages
-                    context_str += f"{msg['role']}: {msg['content']}\n"
+                context_str = "\n\nRecent conversation:\n"
+                for msg in conversation_context[-6:]:  # Last 6 messages for better context
+                    if isinstance(msg, dict):
+                        role = msg.get('role', 'unknown')
+                        content = msg.get('content', '')[:150]  # Truncate long messages
+                        context_str += f"{role}: {content}...\n"
 
-            prompt = f"""You are a helpful executive assistant. Be professional but friendly. {context}{context_str}
+            prompt = f"""You are IntelliAssist, a helpful AI executive assistant. Be conversational and remember what we've discussed. {context}{context_str}
 
 User message: {message}
 
-Provide a helpful response."""
+Provide a helpful, conversational response that builds on our previous discussion."""
 
             response = self.anthropic_client.messages.create(
                 model="claude-sonnet-4-20250514",
