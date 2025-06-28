@@ -161,19 +161,10 @@ We welcome contributions! Here's how to get started:
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
-## 🙋‍♂️ Support & Community
+## 🚦 Roadmap      
 
-- **🐛 Bug Reports**: [Open an issue](https://github.com/yourusername/intelliassist/issues)
-- **💡 Feature Requests**: [Request a feature](https://github.com/yourusername/intelliassist/issues)
-- **❓ Questions**: [Discussions](https://github.com/yourusername/intelliassist/discussions)
-- **📧 Contact**: [Email us](mailto:support@intelliassist.com)
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/intelliassist&type=Date)](https://star-history.com/#yourusername/intelliassist&Date)
+-
 
 ---
-
-**Made with ❤️ by the IntelliAssist team**
